@@ -12,7 +12,9 @@ fn test_analyze_nonce_reuse_from_file() {
         .assert()
         .code(1)
         .stdout(predicate::str::contains("nonce-reuse"))
-        .stdout(predicate::str::contains("62958994860637178871299877498639209302063112480839791435318431648713002718353"));
+        .stdout(predicate::str::contains(
+            "62958994860637178871299877498639209302063112480839791435318431648713002718353",
+        ));
 }
 
 #[test]
@@ -52,12 +54,12 @@ fn test_json_output_schema() {
         .arg("tests/fixtures/nonce_reuse.json")
         .output()
         .unwrap();
-    
+
     assert_eq!(output.status.code(), Some(1));
-    
-    let json: serde_json::Value = serde_json::from_slice(&output.stdout)
-        .expect("Output should be valid JSON");
-    
+
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("Output should be valid JSON");
+
     assert!(json["vulnerabilities"].is_array());
     let vuln = &json["vulnerabilities"][0];
     assert_eq!(vuln["type"].as_str(), Some("nonce-reuse"));
@@ -66,10 +68,13 @@ fn test_json_output_schema() {
     assert!(vuln["recovered_key"]["private_key_decimal"].is_string());
     assert!(vuln["recovered_key"]["private_key_hex"].is_string());
     assert!(json["summary"]["vulnerabilities_found"].is_u64());
-    
+
     let hex = vuln["recovered_key"]["private_key_hex"].as_str().unwrap();
     assert_eq!(hex.len(), 64, "private_key_hex should be 64 hex chars");
-    assert!(hex.chars().all(|c| c.is_ascii_hexdigit()), "should be valid hex");
+    assert!(
+        hex.chars().all(|c| c.is_ascii_hexdigit()),
+        "should be valid hex"
+    );
 }
 
 #[test]

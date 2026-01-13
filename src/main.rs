@@ -1,14 +1,14 @@
 //! CLI for ECDSA signature vulnerability analysis
 
+use anyhow::Result;
 use clap::{Parser, Subcommand};
+use k256::Scalar;
 use serde::Serialize;
 use std::process::ExitCode;
 use vusi::attack::{Attack, NonceReuseAttack, Vulnerability};
+use vusi::math::scalar_to_decimal_string;
 use vusi::provider::load_signatures;
 use vusi::signature::Signature;
-use vusi::math::scalar_to_decimal_string;
-use k256::Scalar;
-use anyhow::Result;
 
 #[derive(Parser)]
 #[command(name = "vusi")]
@@ -16,7 +16,7 @@ use anyhow::Result;
 struct Cli {
     #[command(subcommand)]
     command: Command,
-    
+
     #[arg(long, global = true)]
     json: bool,
 }
@@ -52,10 +52,10 @@ fn run(cli: Cli) -> Result<bool> {
             let signatures = load_signatures(&input)?;
             let attack = NonceReuseAttack;
             let vulns = attack.detect(&signatures);
-            
+
             let output = format_output(&vulns, &attack, &signatures, cli.json)?;
             println!("{}", output);
-            
+
             Ok(!vulns.is_empty())
         }
     }
@@ -106,10 +106,11 @@ fn format_output(
 ) -> Result<String> {
     let mut vuln_outputs = Vec::new();
     let mut keys_recovered = 0;
-    
+
     for vuln in vulns {
         let recovered = attack.recover(vuln);
-        let (recovery_status, recovery_reason, recovered_key_output) = if let Some(key) = &recovered {
+        let (recovery_status, recovery_reason, recovered_key_output) = if let Some(key) = &recovered
+        {
             keys_recovered += 1;
             (
                 "recovered".to_string(),
@@ -126,7 +127,7 @@ fn format_output(
                 None,
             )
         };
-        
+
         vuln_outputs.push(VulnerabilityOutput {
             vuln_type: vuln.attack_type.clone(),
             confidence: vuln.group.confidence,
@@ -138,7 +139,7 @@ fn format_output(
             recovery_reason,
         });
     }
-    
+
     let report = OutputReport {
         vulnerabilities: vuln_outputs,
         summary: SummaryOutput {
@@ -147,18 +148,18 @@ fn format_output(
             keys_recovered,
         },
     };
-    
+
     if json {
         Ok(serde_json::to_string_pretty(&report)?)
     } else {
         let mut output = String::new();
         output.push_str(&format!("Analyzed {} signatures\n\n", sigs.len()));
-        
+
         if vulns.is_empty() {
             output.push_str("No vulnerabilities found.\n");
         } else {
             output.push_str(&format!("Found {} vulnerabilities:\n\n", vulns.len()));
-            
+
             for (i, vuln_output) in report.vulnerabilities.iter().enumerate() {
                 output.push_str(&format!("Vulnerability #{}\n", i + 1));
                 output.push_str(&format!("  Type: {}\n", vuln_output.vuln_type));
@@ -168,10 +169,13 @@ fn format_output(
                     output.push_str(&format!("  Public Key: {}\n", pk));
                 }
                 output.push_str(&format!("  R Value: {}\n", vuln_output.r_value));
-                
+
                 if let Some(key) = &vuln_output.recovered_key {
                     output.push_str(&format!("  Status: {}\n", vuln_output.recovery_status));
-                    output.push_str(&format!("  Private Key (decimal): {}\n", key.private_key_decimal));
+                    output.push_str(&format!(
+                        "  Private Key (decimal): {}\n",
+                        key.private_key_decimal
+                    ));
                     output.push_str(&format!("  Private Key (hex): {}\n", key.private_key_hex));
                 } else {
                     output.push_str(&format!("  Status: {}\n", vuln_output.recovery_status));
@@ -182,7 +186,7 @@ fn format_output(
                 output.push_str("\n");
             }
         }
-        
+
         Ok(output)
     }
 }

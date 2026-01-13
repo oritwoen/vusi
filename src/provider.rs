@@ -18,7 +18,7 @@ pub fn load_signatures(input: &str) -> Result<Vec<Signature>> {
     } else {
         std::fs::read_to_string(input)?
     };
-    
+
     parse_signatures(&content)
 }
 
@@ -28,26 +28,22 @@ pub fn parse_signatures(content: &str) -> Result<Vec<Signature>> {
         Format::Json => parse_json(content)?,
         Format::Csv => parse_csv(content)?,
     };
-    
-    inputs.into_iter()
-        .map(Signature::try_from)
-        .collect()
+
+    inputs.into_iter().map(Signature::try_from).collect()
 }
 
 const BOM: &str = "\u{FEFF}";
 
 pub fn detect_format(content: &str) -> Result<Format> {
-    let trimmed = content
-        .strip_prefix(BOM)
-        .unwrap_or(content)
-        .trim_start();
-    
+    let trimmed = content.strip_prefix(BOM).unwrap_or(content).trim_start();
+
     if trimmed.starts_with('[') {
         return Ok(Format::Json);
     }
-    
+
     if let Some(first_line) = trimmed.lines().next() {
-        let columns: Vec<String> = first_line.split(',')
+        let columns: Vec<String> = first_line
+            .split(',')
             .map(|c| c.trim().to_lowercase())
             .collect();
         let has_r = columns.iter().any(|c| c == "r");
@@ -57,7 +53,7 @@ pub fn detect_format(content: &str) -> Result<Format> {
             return Ok(Format::Csv);
         }
     }
-    
+
     bail!("Unable to detect input format. Use JSON array or CSV with r,s,z header.")
 }
 
@@ -77,33 +73,33 @@ fn parse_csv(content: &str) -> Result<Vec<SignatureInput>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_parse_json_signatures() {
         let json = r#"[{"r": "123", "s": "456", "z": "789"}]"#;
         let sigs = parse_signatures(json).unwrap();
         assert_eq!(sigs.len(), 1);
     }
-    
+
     #[test]
     fn test_parse_csv_signatures() {
         let csv = "r,s,z,pubkey\n123,456,789,";
         let sigs = parse_signatures(csv).unwrap();
         assert_eq!(sigs.len(), 1);
     }
-    
+
     #[test]
     fn test_auto_detect_json() {
         let json = r#"  [{"r": "1", "s": "2", "z": "3"}]"#;
         assert_eq!(detect_format(json).unwrap(), Format::Json);
     }
-    
+
     #[test]
     fn test_auto_detect_csv() {
         let csv = "r,s,z\n1,2,3";
         assert_eq!(detect_format(csv).unwrap(), Format::Csv);
     }
-    
+
     #[test]
     fn test_invalid_json_error() {
         let result = parse_signatures("not json");
