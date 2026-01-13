@@ -96,4 +96,4 @@ cargo build --release
 
 ## License
 
-MIT OR Apache-2.0
+MIT
