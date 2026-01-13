@@ -40,7 +40,7 @@ release version:
     
     git cliff --tag "v$VERSION" -o CHANGELOG.md
     
-    git add Cargo.toml PKGBUILD CHANGELOG.md README.md
+    git add Cargo.toml Cargo.lock PKGBUILD CHANGELOG.md README.md
     git commit -m "chore(release): v$VERSION"
     
     git tag -a "v$VERSION" -m "Release v$VERSION"
