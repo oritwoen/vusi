@@ -183,7 +183,7 @@ fn format_output(
                         output.push_str(&format!("  Reason: {}\n", reason));
                     }
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
         }
 
