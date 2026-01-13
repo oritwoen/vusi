@@ -1,7 +1,9 @@
 # vusi
 
-[![Crates.io](https://img.shields.io/crates/v/vusi.svg)](https://crates.io/crates/vusi)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Crates.io](https://img.shields.io/crates/v/vusi?style=flat&colorA=130f40&colorB=474787)](https://crates.io/crates/vusi)
+[![Downloads](https://img.shields.io/crates/d/vusi?style=flat&colorA=130f40&colorB=474787)](https://crates.io/crates/vusi)
+[![License](https://img.shields.io/crates/l/vusi?style=flat&colorA=130f40&colorB=474787)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oritwoen/vusi)
 
 ECDSA signature vulnerability analysis library and CLI tool.
 
