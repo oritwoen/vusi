@@ -35,12 +35,10 @@ hex = "0.4"
 # Optional blockchain integration
 boha = { version = "0.14", optional = true }
 
-feanor-math = { version = "3.5", optional = true }
-
 [features]
 default = []
 boha = ["dep:boha"]
-polynonce = ["dep:feanor-math"]
+polynonce = []
 
 [dev-dependencies]
 assert_cmd = "2.0"

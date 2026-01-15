@@ -1,8 +1,5 @@
 //! Mathematical utilities for ECDSA operations
 
-#[cfg(feature = "polynonce")]
-pub mod feanor;
-
 use anyhow::{anyhow, bail, Result};
 use k256::elliptic_curve::ff::PrimeField;
 use k256::Scalar;
