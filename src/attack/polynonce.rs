@@ -408,7 +408,7 @@ mod tests {
 
         let two = Scalar::from(2u64);
         let three = Scalar::from(3u64);
-        assert!(roots.contains(&two) || roots.contains(&three));
+        assert!(roots.contains(&two) && roots.contains(&three));
     }
 
     #[test]
