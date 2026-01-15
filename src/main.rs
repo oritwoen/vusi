@@ -6,6 +6,8 @@ use k256::Scalar;
 use serde::Serialize;
 use std::process::ExitCode;
 use vusi::attack::{Attack, NonceReuseAttack, Vulnerability};
+#[cfg(feature = "polynonce")]
+use vusi::attack::PolynonceAttack;
 use vusi::math::scalar_to_decimal_string;
 use vusi::provider::load_signatures;
 use vusi::signature::Signature;
@@ -26,6 +28,12 @@ enum Command {
     Analyze {
         #[arg(default_value = "-")]
         input: String,
+
+        #[arg(long, default_value = "nonce-reuse", help = "Attack type: nonce-reuse, polynonce")]
+        attack: String,
+
+        #[arg(long, default_value = "1", help = "Polynomial degree for polynonce attack (1=linear, 2=quadratic)")]
+        degree: usize,
     },
 }
 
@@ -48,12 +56,26 @@ fn main() -> ExitCode {
 
 fn run(cli: Cli) -> Result<bool> {
     match cli.command {
-        Command::Analyze { input } => {
+        Command::Analyze { input, attack, degree } => {
             let signatures = load_signatures(&input)?;
-            let attack = NonceReuseAttack;
-            let vulns = attack.detect(&signatures);
 
-            let output = format_output(&vulns, &attack, &signatures, cli.json)?;
+            let (vulns, attack_impl): (Vec<Vulnerability>, Box<dyn Attack>) =
+                match attack.as_str() {
+                    "nonce-reuse" => {
+                        let attack = NonceReuseAttack;
+                        let vulns = attack.detect(&signatures);
+                        (vulns, Box::new(attack))
+                    }
+                    #[cfg(feature = "polynonce")]
+                    "polynonce" => {
+                        let attack = PolynonceAttack::new(degree);
+                        let vulns = attack.detect(&signatures);
+                        (vulns, Box::new(attack))
+                    }
+                    _ => anyhow::bail!("Unknown attack type: {}", attack),
+                };
+
+            let output = format_output(&vulns, attack_impl.as_ref(), &signatures, cli.json)?;
             println!("{}", output);
 
             Ok(!vulns.is_empty())
@@ -100,7 +122,7 @@ fn scalar_to_hex_string(scalar: &Scalar) -> String {
 
 fn format_output(
     vulns: &[Vulnerability],
-    attack: &NonceReuseAttack,
+    attack: &dyn Attack,
     sigs: &[Signature],
     json: bool,
 ) -> Result<String> {
