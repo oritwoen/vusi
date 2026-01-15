@@ -38,6 +38,7 @@ boha = { version = "0.14", optional = true }
 [features]
 default = []
 boha = ["dep:boha"]
+polynonce = []
 
 [dev-dependencies]
 assert_cmd = "2.0"

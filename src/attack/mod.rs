@@ -6,6 +6,11 @@ use k256::Scalar;
 pub mod nonce_reuse;
 pub use nonce_reuse::NonceReuseAttack;
 
+#[cfg(feature = "polynonce")]
+pub mod polynonce;
+#[cfg(feature = "polynonce")]
+pub use polynonce::PolynonceAttack;
+
 pub trait Attack: Send + Sync {
     fn name(&self) -> &'static str;
     fn min_signatures(&self) -> usize;
