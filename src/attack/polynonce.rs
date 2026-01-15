@@ -36,7 +36,10 @@ macro_rules! with_elimination_poly {
         let $zz = RustBigintRing::RING;
         let n = secp256k1_order_bigint();
         let $zn = Zn::new($zz, n);
-        let $fp = $zn.clone().as_field().expect("secp256k1 order should be prime");
+        let $fp = $zn
+            .clone()
+            .as_field()
+            .expect("secp256k1 order should be prime");
 
         // Create polynomial ring over Fp
         let $poly_ring = DensePolyRing::new(&$fp, "d");
@@ -463,7 +466,10 @@ mod tests {
             .collect();
 
         let vulns = attack.detect(&sigs);
-        assert!(vulns.is_empty(), "3 signatures should be insufficient for degree=1");
+        assert!(
+            vulns.is_empty(),
+            "3 signatures should be insufficient for degree=1"
+        );
     }
 
     #[test]
@@ -485,7 +491,10 @@ mod tests {
             .collect();
 
         let vulns = attack.detect(&sigs);
-        assert!(vulns.is_empty(), "Signatures without pubkey should be filtered out");
+        assert!(
+            vulns.is_empty(),
+            "Signatures without pubkey should be filtered out"
+        );
     }
 
     #[test]
@@ -496,7 +505,11 @@ mod tests {
         sigs.extend(make_4_consecutive_sigs("02bbbbbb"));
 
         let vulns = attack.detect(&sigs);
-        assert_eq!(vulns.len(), 2, "Should create separate vulnerability groups for each pubkey");
+        assert_eq!(
+            vulns.len(),
+            2,
+            "Should create separate vulnerability groups for each pubkey"
+        );
 
         let pubkeys: Vec<_> = vulns
             .iter()
@@ -527,7 +540,10 @@ mod tests {
         };
 
         let recovered = attack.recover(&vuln).expect("Should recover private key");
-        assert_eq!(recovered.private_key, d_known, "Recovered key should match known key");
+        assert_eq!(
+            recovered.private_key, d_known,
+            "Recovered key should match known key"
+        );
         assert_eq!(
             recovered.private_key_decimal,
             scalar_to_decimal_string(&d_known),

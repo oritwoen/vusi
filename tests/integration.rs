@@ -141,5 +141,8 @@ fn test_polynonce_json_output_schema() {
         hex.chars().all(|c| c.is_ascii_hexdigit()),
         "should be valid hex"
     );
-    assert!(hex.ends_with("3039"), "hex should end with 3039 (12345 in hex)");
+    assert!(
+        hex.ends_with("3039"),
+        "hex should end with 3039 (12345 in hex)"
+    );
 }

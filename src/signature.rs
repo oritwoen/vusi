@@ -94,7 +94,10 @@ pub fn group_by_pubkey_ordered(sigs: &[Signature]) -> Vec<SignatureGroup> {
     let mut groups: HashMap<Option<String>, Vec<Signature>> = HashMap::new();
 
     for sig in sigs {
-        groups.entry(sig.pubkey.clone()).or_default().push(sig.clone());
+        groups
+            .entry(sig.pubkey.clone())
+            .or_default()
+            .push(sig.clone());
     }
 
     groups
@@ -375,7 +378,10 @@ mod tests {
         let groups = group_by_pubkey_ordered(&sigs);
         assert_eq!(groups.len(), 2);
         // 02abcdef group should be sorted by timestamp: 1, 2, 3
-        let pk1_group = groups.iter().find(|g| g.pubkey == Some("02abcdef".to_string())).unwrap();
+        let pk1_group = groups
+            .iter()
+            .find(|g| g.pubkey == Some("02abcdef".to_string()))
+            .unwrap();
         assert_eq!(pk1_group.signatures[0].timestamp, Some(1));
         assert_eq!(pk1_group.signatures[1].timestamp, Some(2));
         assert_eq!(pk1_group.signatures[2].timestamp, Some(3));
