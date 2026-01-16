@@ -1,3 +1,17 @@
+## [0.2.0] - 2026-01-16
+
+### Features
+
+- Polynonce attack detection (#9)
+
+### Documentation
+
+- Standardize badges
+## [0.1.0] - 2026-01-13
+
+### Miscellaneous Tasks
+
+- *(release)* V0.1.0
 ## [list] - 2026-01-13
 
 ### Bug Fixes
