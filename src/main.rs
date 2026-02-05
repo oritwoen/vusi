@@ -5,6 +5,10 @@ use clap::{Parser, Subcommand};
 use k256::Scalar;
 use serde::Serialize;
 use std::process::ExitCode;
+#[cfg(feature = "biased-nonce")]
+use vusi::attack::biased_nonce::{BiasType, ReductionAlgorithm};
+#[cfg(feature = "biased-nonce")]
+use vusi::attack::BiasedNonceAttack;
 #[cfg(feature = "polynonce")]
 use vusi::attack::PolynonceAttack;
 use vusi::attack::{Attack, NonceReuseAttack, Vulnerability};
@@ -32,7 +36,7 @@ enum Command {
         #[arg(
             long,
             default_value = "nonce-reuse",
-            help = "Attack type: nonce-reuse, polynonce"
+            help = "Attack type: nonce-reuse, polynonce, biased-nonce"
         )]
         attack: String,
 
@@ -42,6 +46,40 @@ enum Command {
             help = "Polynomial degree for polynonce attack (1=linear, 2=quadratic)"
         )]
         degree: usize,
+
+        #[arg(
+            long,
+            default_value = "lsb",
+            help = "Bias type for biased-nonce attack: lsb, msb, range"
+        )]
+        bias_type: String,
+
+        #[arg(
+            long,
+            default_value = "8",
+            help = "Known bits for biased-nonce (range uses this as max nonce bits)"
+        )]
+        known_bits: usize,
+
+        #[arg(
+            long,
+            default_value = "lll",
+            help = "Lattice reduction: lll, windowed-lll"
+        )]
+        reduction: String,
+
+        #[arg(
+            long,
+            default_value = "20",
+            help = "Block size for windowed-lll reduction"
+        )]
+        window_block_size: usize,
+
+        #[arg(long, default_value = "2", help = "Rounds for windowed-lll reduction")]
+        window_rounds: usize,
+
+        #[arg(long, help = "Max signatures to sample for biased-nonce recovery")]
+        max_samples: Option<usize>,
     },
 }
 
@@ -67,7 +105,13 @@ fn run(cli: Cli) -> Result<bool> {
         Command::Analyze {
             input,
             attack,
-            degree,
+            degree: _polynonce_degree,
+            bias_type,
+            known_bits,
+            reduction,
+            window_block_size,
+            window_rounds,
+            max_samples,
         } => {
             let signatures = load_signatures(&input)?;
 
@@ -80,7 +124,34 @@ fn run(cli: Cli) -> Result<bool> {
                 }
                 #[cfg(feature = "polynonce")]
                 "polynonce" => {
-                    let attack = PolynonceAttack::new(degree);
+                    let attack = PolynonceAttack::new(_polynonce_degree);
+                    let vulns = attack.detect(&signatures);
+                    (vulns, Box::new(attack))
+                }
+                #[cfg(feature = "biased-nonce")]
+                "biased-nonce" => {
+                    let bias_type = match bias_type.as_str() {
+                        "lsb" => BiasType::Lsb,
+                        "msb" => BiasType::Msb,
+                        "range" => BiasType::Range,
+                        _ => anyhow::bail!("Unknown bias type: {}", bias_type),
+                    };
+                    if bias_type != BiasType::Range && known_bits < 4 {
+                        anyhow::bail!("Known bits must be >= 4 for biased-nonce");
+                    }
+                    if bias_type == BiasType::Range && (known_bits == 0 || known_bits > 256) {
+                        anyhow::bail!("Range max bits must be between 1 and 256");
+                    }
+                    let reduction = match reduction.as_str() {
+                        "lll" => ReductionAlgorithm::Lll,
+                        "windowed-lll" => ReductionAlgorithm::WindowedLll {
+                            block_size: window_block_size,
+                            rounds: window_rounds,
+                        },
+                        _ => anyhow::bail!("Unknown reduction: {}", reduction),
+                    };
+                    let attack =
+                        BiasedNonceAttack::new(bias_type, known_bits, reduction, max_samples);
                     let vulns = attack.detect(&signatures);
                     (vulns, Box::new(attack))
                 }

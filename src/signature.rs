@@ -1,9 +1,11 @@
 //! Signature data types and grouping logic
 
 use crate::math::{parse_scalar_decimal_strict, ScalarKind};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use k256::elliptic_curve::ff::PrimeField;
 use k256::Scalar;
+use num_bigint::BigUint;
+use num_traits::Num;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -24,6 +26,8 @@ pub struct SignatureInput {
     pub pubkey: Option<String>,
     #[serde(default)]
     pub timestamp: Option<u64>,
+    #[serde(default, deserialize_with = "empty_string_as_none")]
+    pub kp: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -33,6 +37,7 @@ pub struct Signature {
     pub z: Scalar,
     pub pubkey: Option<String>,
     pub timestamp: Option<u64>,
+    pub kp: Option<BigUint>,
 }
 
 impl TryFrom<SignatureInput> for Signature {
@@ -55,12 +60,21 @@ impl TryFrom<SignatureInput> for Signature {
             None
         };
 
+        let kp = if let Some(kp_str) = input.kp {
+            let parsed = BigUint::from_str_radix(&kp_str, 10)
+                .map_err(|e| anyhow!("Invalid kp value: {}", e))?;
+            Some(parsed)
+        } else {
+            None
+        };
+
         Ok(Signature {
             r,
             s,
             z,
             pubkey,
             timestamp,
+            kp,
         })
     }
 }
@@ -162,6 +176,7 @@ mod tests {
                 .to_string(),
             pubkey: None,
             timestamp: None,
+            kp: None,
         };
         let sig = Signature::try_from(input).unwrap();
         assert!(!bool::from(sig.r.is_zero()));
@@ -175,6 +190,7 @@ mod tests {
             z: "789".to_string(),
             pubkey: Some("02abcdef".to_string()),
             timestamp: None,
+            kp: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
@@ -182,6 +198,7 @@ mod tests {
             z: "222".to_string(),
             pubkey: Some("02abcdef".to_string()),
             timestamp: None,
+            kp: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();
@@ -201,6 +218,7 @@ mod tests {
             z: "789".to_string(),
             pubkey: None,
             timestamp: None,
+            kp: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
@@ -208,6 +226,7 @@ mod tests {
             z: "222".to_string(),
             pubkey: None,
             timestamp: None,
+            kp: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();
@@ -227,6 +246,7 @@ mod tests {
             z: "789".to_string(),
             pubkey: Some("02abcdef".to_string()),
             timestamp: None,
+            kp: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
@@ -234,6 +254,7 @@ mod tests {
             z: "222".to_string(),
             pubkey: Some("03fedcba".to_string()),
             timestamp: None,
+            kp: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();
@@ -251,6 +272,7 @@ mod tests {
             z: "789".to_string(),
             pubkey: Some("02ABCDEF".to_string()),
             timestamp: None,
+            kp: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
@@ -258,6 +280,7 @@ mod tests {
             z: "222".to_string(),
             pubkey: Some("02abcdef".to_string()),
             timestamp: None,
+            kp: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();
@@ -276,6 +299,7 @@ mod tests {
             z: "789".to_string(),
             pubkey: Some("0x02abcdef").map(str::to_string),
             timestamp: None,
+            kp: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
@@ -283,6 +307,7 @@ mod tests {
             z: "222".to_string(),
             pubkey: Some("02abcdef").map(str::to_string),
             timestamp: None,
+            kp: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();
@@ -363,6 +388,7 @@ mod tests {
             z: "789".to_string(),
             pubkey: pubkey.map(str::to_string),
             timestamp,
+            kp: None,
         };
         Signature::try_from(input).unwrap()
     }

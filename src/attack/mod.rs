@@ -6,6 +6,11 @@ use k256::Scalar;
 pub mod nonce_reuse;
 pub use nonce_reuse::NonceReuseAttack;
 
+#[cfg(feature = "biased-nonce")]
+pub mod biased_nonce;
+#[cfg(feature = "biased-nonce")]
+pub use biased_nonce::BiasedNonceAttack;
+
 #[cfg(feature = "polynonce")]
 pub mod polynonce;
 #[cfg(feature = "polynonce")]
