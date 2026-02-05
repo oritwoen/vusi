@@ -32,6 +32,9 @@ csv = "1.3"
 # Utilities
 hex = "0.4"
 
+# Lattice reduction
+rug = { version = "1.24", optional = true }
+
 # Optional blockchain integration
 boha = { version = "0.14", optional = true }
 
@@ -39,6 +42,7 @@ boha = { version = "0.14", optional = true }
 default = []
 boha = ["dep:boha"]
 polynonce = []
+biased-nonce = ["dep:rug"]
 
 [dev-dependencies]
 assert_cmd = "2.0"

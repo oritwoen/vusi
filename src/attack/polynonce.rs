@@ -378,6 +378,7 @@ mod tests {
                     z,
                     pubkey: Some("02test".to_string()),
                     timestamp: Some(i as u64),
+                    kp: None,
                 }
             })
             .collect()

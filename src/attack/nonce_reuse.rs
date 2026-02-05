@@ -74,6 +74,7 @@ mod tests {
                     .into(),
                 pubkey: None,
                 timestamp: None,
+                kp: None,
             })
             .unwrap(),
             Signature::try_from(SignatureInput {
@@ -85,6 +86,7 @@ mod tests {
                     .into(),
                 pubkey: None,
                 timestamp: None,
+                kp: None,
             })
             .unwrap(),
         ]
@@ -120,6 +122,7 @@ mod tests {
                 z: "789".into(),
                 pubkey: None,
                 timestamp: None,
+                kp: None,
             })
             .unwrap(),
             Signature::try_from(SignatureInput {
@@ -128,6 +131,7 @@ mod tests {
                 z: "222".into(),
                 pubkey: None,
                 timestamp: None,
+                kp: None,
             })
             .unwrap(),
         ];
