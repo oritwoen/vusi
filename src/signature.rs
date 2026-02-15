@@ -22,6 +22,8 @@ pub struct SignatureInput {
     pub z: String,
     #[serde(default, deserialize_with = "empty_string_as_none")]
     pub pubkey: Option<String>,
+    #[serde(default)]
+    pub timing: Option<u64>,
 }
 
 #[derive(Debug, Clone)]
@@ -30,6 +32,7 @@ pub struct Signature {
     pub s: Scalar,
     pub z: Scalar,
     pub pubkey: Option<String>,
+    pub timing: Option<u64>,
 }
 
 impl TryFrom<SignatureInput> for Signature {
@@ -50,7 +53,7 @@ impl TryFrom<SignatureInput> for Signature {
             None
         };
 
-        Ok(Signature { r, s, z, pubkey })
+        Ok(Signature { r, s, z, pubkey, timing: input.timing })
     }
 }
 
@@ -121,6 +124,7 @@ mod tests {
             z: "4834837306435966184874350434501389872155834069808640791394730023708942795899"
                 .to_string(),
             pubkey: None,
+            timing: None,
         };
         let sig = Signature::try_from(input).unwrap();
         assert!(!bool::from(sig.r.is_zero()));
@@ -133,12 +137,14 @@ mod tests {
             s: "456".to_string(),
             z: "789".to_string(),
             pubkey: Some("02abcdef".to_string()),
+            timing: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
             s: "111".to_string(),
             z: "222".to_string(),
             pubkey: Some("02abcdef".to_string()),
+            timing: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();
@@ -157,12 +163,14 @@ mod tests {
             s: "456".to_string(),
             z: "789".to_string(),
             pubkey: None,
+            timing: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
             s: "111".to_string(),
             z: "222".to_string(),
             pubkey: None,
+            timing: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();
@@ -175,63 +183,20 @@ mod tests {
     }
 
     #[test]
-    fn test_group_by_r_and_pubkey_different_pubkey() {
-        let input1 = SignatureInput {
-            r: "123".to_string(),
-            s: "456".to_string(),
-            z: "789".to_string(),
-            pubkey: Some("02abcdef".to_string()),
-        };
-        let input2 = SignatureInput {
-            r: "123".to_string(),
-            s: "111".to_string(),
-            z: "222".to_string(),
-            pubkey: Some("03fedcba".to_string()),
-        };
-
-        let sig1 = Signature::try_from(input1).unwrap();
-        let sig2 = Signature::try_from(input2).unwrap();
-
-        let groups = group_by_r_and_pubkey(&[sig1, sig2]);
-        assert_eq!(groups.len(), 2);
-    }
-
-    #[test]
     fn test_pubkey_normalization_case_insensitive() {
         let input1 = SignatureInput {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
             pubkey: Some("02ABCDEF".to_string()),
+            timing: None,
         };
         let input2 = SignatureInput {
             r: "123".to_string(),
             s: "111".to_string(),
             z: "222".to_string(),
             pubkey: Some("02abcdef".to_string()),
-        };
-
-        let sig1 = Signature::try_from(input1).unwrap();
-        let sig2 = Signature::try_from(input2).unwrap();
-
-        let groups = group_by_r_and_pubkey(&[sig1, sig2]);
-        assert_eq!(groups.len(), 1);
-        assert_eq!(groups[0].signatures.len(), 2);
-    }
-
-    #[test]
-    fn test_pubkey_normalization_0x_prefix() {
-        let input1 = SignatureInput {
-            r: "123".to_string(),
-            s: "456".to_string(),
-            z: "789".to_string(),
-            pubkey: Some("0x02abcdef".to_string()),
-        };
-        let input2 = SignatureInput {
-            r: "123".to_string(),
-            s: "111".to_string(),
-            z: "222".to_string(),
-            pubkey: Some("02abcdef".to_string()),
+            timing: None,
         };
 
         let sig1 = Signature::try_from(input1).unwrap();

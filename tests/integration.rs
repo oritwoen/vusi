@@ -87,3 +87,66 @@ fn test_invalid_input_error_exit() {
         .assert()
         .code(2);
 }
+
+#[test]
+fn test_generate_and_analyze_related_nonce() {
+    let mut cmd = Command::cargo_bin("vusi").unwrap();
+    cmd.arg("generate")
+        .arg("--weakness").arg("related")
+        .arg("--count").arg("2")
+        .arg("--seed").arg("12345");
+
+    let output = cmd.output().unwrap();
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    let mut analyze_cmd = Command::cargo_bin("vusi").unwrap();
+    analyze_cmd.arg("analyze").arg("-");
+    analyze_cmd.write_stdin(stdout);
+
+    analyze_cmd.assert()
+        .code(1)
+        .stdout(predicate::str::contains("related-nonce"))
+        .stdout(predicate::str::contains("recovered"));
+}
+
+#[test]
+fn test_generate_and_analyze_half_half() {
+    let mut cmd = Command::cargo_bin("vusi").unwrap();
+    cmd.arg("generate")
+        .arg("--weakness").arg("half-half")
+        .arg("--count").arg("1")
+        .arg("--seed").arg("12345");
+
+    let output = cmd.output().unwrap();
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    let mut analyze_cmd = Command::cargo_bin("vusi").unwrap();
+    analyze_cmd.arg("analyze").arg("-");
+    analyze_cmd.write_stdin(stdout);
+
+    analyze_cmd.assert()
+        .code(1)
+        .stdout(predicate::str::contains("half-half"))
+        .stdout(predicate::str::contains("recovered"));
+}
+
+#[test]
+fn test_generate_and_analyze_lcg() {
+    let mut cmd = Command::cargo_bin("vusi").unwrap();
+    cmd.arg("generate")
+        .arg("--weakness").arg("lcg")
+        .arg("--count").arg("2")
+        .arg("--seed").arg("12345");
+
+    let output = cmd.output().unwrap();
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    let mut analyze_cmd = Command::cargo_bin("vusi").unwrap();
+    analyze_cmd.arg("analyze").arg("-");
+    analyze_cmd.write_stdin(stdout);
+
+    analyze_cmd.assert()
+        .code(1)
+        .stdout(predicate::str::contains("lcg"))
+        .stdout(predicate::str::contains("recovered"));
+}

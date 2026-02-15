@@ -5,10 +5,11 @@ use clap::{Parser, Subcommand};
 use k256::Scalar;
 use serde::Serialize;
 use std::process::ExitCode;
-use vusi::attack::{Attack, NonceReuseAttack, Vulnerability};
+use vusi::attack::{Attack, NonceReuseAttack, RelatedNonceAttack, HalfHalfAttack, LcgAttack, TimingAttack, Vulnerability};
 use vusi::math::scalar_to_decimal_string;
 use vusi::provider::load_signatures;
-use vusi::signature::Signature;
+use vusi::signature::{Signature, SignatureInput};
+use vusi::generator::{GeneratorConfig, generate_signatures};
 
 #[derive(Parser)]
 #[command(name = "vusi")]
@@ -23,9 +24,28 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Analyze signatures for vulnerabilities
     Analyze {
         #[arg(default_value = "-")]
         input: String,
+    },
+    /// Generate vulnerable signatures for research
+    Generate {
+        /// Type of weakness to simulate (reuse, biased, lcg, related, polynonce, half-half)
+        #[arg(long)]
+        weakness: String,
+        /// Number of signatures to generate
+        #[arg(long, default_value_t = 10)]
+        count: usize,
+        /// Output file path (defaults to stdout)
+        #[arg(long)]
+        output: Option<String>,
+        /// Number of bits for biased nonces
+        #[arg(long)]
+        bias_bits: Option<usize>,
+        /// Random seed for reproducible generation
+        #[arg(long)]
+        seed: Option<u64>,
     },
 }
 
@@ -50,15 +70,62 @@ fn run(cli: Cli) -> Result<bool> {
     match cli.command {
         Command::Analyze { input } => {
             let signatures = load_signatures(&input)?;
-            let attack = NonceReuseAttack;
-            let vulns = attack.detect(&signatures);
+            let attacks: Vec<Box<dyn Attack>> = vec![
+                Box::new(NonceReuseAttack),
+                Box::new(RelatedNonceAttack),
+                Box::new(HalfHalfAttack),
+                Box::new(LcgAttack),
+                Box::new(TimingAttack),
+            ];
 
-            let output = format_output(&vulns, &attack, &signatures, cli.json)?;
+            let mut all_vulns = Vec::new();
+            for attack in &attacks {
+                let vulns = attack.detect(&signatures);
+                for vuln in vulns {
+                    all_vulns.push((vuln, attack.as_ref()));
+                }
+            }
+
+            let output = format_output(&all_vulns, &signatures, cli.json)?;
             println!("{}", output);
 
-            Ok(!vulns.is_empty())
+            Ok(!all_vulns.is_empty())
+        }
+        Command::Generate { weakness, count, output, bias_bits, seed } => {
+            let config = GeneratorConfig {
+                weakness,
+                count,
+                bias_bits,
+                seed,
+            };
+            let signatures = generate_signatures(config)?;
+            save_signatures(&signatures, &output)?;
+            Ok(false)
         }
     }
+}
+
+fn save_signatures(signatures: &[SignatureInput], output_path: &Option<String>) -> Result<()> {
+    let content = if let Some(path) = output_path {
+        if path.ends_with(".csv") {
+            let mut wtr = csv::Writer::from_writer(vec![]);
+            for sig in signatures {
+                wtr.serialize(sig)?;
+            }
+            String::from_utf8(wtr.into_inner()?)?
+        } else {
+            serde_json::to_string_pretty(signatures)?
+        }
+    } else {
+        serde_json::to_string_pretty(signatures)?
+    };
+
+    if let Some(path) = output_path {
+        std::fs::write(path, content)?;
+    } else {
+        println!("{}", content);
+    }
+    Ok(())
 }
 
 #[derive(Serialize)]
@@ -99,15 +166,14 @@ fn scalar_to_hex_string(scalar: &Scalar) -> String {
 }
 
 fn format_output(
-    vulns: &[Vulnerability],
-    attack: &NonceReuseAttack,
+    vulns: &[(Vulnerability, &dyn Attack)],
     sigs: &[Signature],
     json: bool,
 ) -> Result<String> {
     let mut vuln_outputs = Vec::new();
     let mut keys_recovered = 0;
 
-    for vuln in vulns {
+    for (vuln, attack) in vulns {
         let recovered = attack.recover(vuln);
         let (recovery_status, recovery_reason, recovered_key_output) = if let Some(key) = &recovered
         {
@@ -123,7 +189,7 @@ fn format_output(
         } else {
             (
                 "unrecoverable".to_string(),
-                Some("all pairs have s1 == s2".to_string()),
+                Some("no relationship could be exploited".to_string()),
                 None,
             )
         };

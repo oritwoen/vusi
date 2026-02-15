@@ -6,6 +6,7 @@
 pub mod attack;
 pub mod math;
 pub mod provider;
+pub mod generator;
 pub mod signature;
 
 pub use attack::Attack;

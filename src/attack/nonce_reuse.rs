@@ -72,7 +72,7 @@ mod tests {
                     .into(),
                 z: "4834837306435966184874350434501389872155834069808640791394730023708942795899"
                     .into(),
-                pubkey: None,
+                pubkey: None, timing: None,
             })
             .unwrap(),
             Signature::try_from(SignatureInput {
@@ -82,7 +82,7 @@ mod tests {
                     .into(),
                 z: "108808786585075507407446857551522706228868950080801424952567576192808212665067"
                     .into(),
-                pubkey: None,
+                pubkey: None, timing: None,
             })
             .unwrap(),
         ]
@@ -116,14 +116,14 @@ mod tests {
                 r: "123".into(),
                 s: "456".into(),
                 z: "789".into(),
-                pubkey: None,
+                pubkey: None, timing: None,
             })
             .unwrap(),
             Signature::try_from(SignatureInput {
                 r: "999".into(),
                 s: "111".into(),
                 z: "222".into(),
-                pubkey: None,
+                pubkey: None, timing: None,
             })
             .unwrap(),
         ];

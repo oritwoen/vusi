@@ -1034,6 +1034,8 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "predicates",
+ "rand",
+ "rand_chacha",
  "serde",
  "serde_json",
  "thiserror 1.0.69",

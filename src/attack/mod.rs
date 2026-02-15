@@ -4,7 +4,16 @@ use crate::signature::{Signature, SignatureGroup};
 use k256::Scalar;
 
 pub mod nonce_reuse;
+pub mod related_nonce;
+pub mod half_half;
+pub mod lcg;
+pub mod timing;
+
 pub use nonce_reuse::NonceReuseAttack;
+pub use related_nonce::RelatedNonceAttack;
+pub use half_half::HalfHalfAttack;
+pub use lcg::LcgAttack;
+pub use timing::TimingAttack;
 
 pub trait Attack: Send + Sync {
     fn name(&self) -> &'static str;

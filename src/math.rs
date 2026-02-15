@@ -185,3 +185,30 @@ mod tests {
         assert!(result.unwrap_err().to_string().contains("secp256k1 order"));
     }
 }
+
+pub fn verify_private_key(x: &Scalar, r: &Scalar, s: &Scalar, z: &Scalar, pubkey: &Option<String>) -> bool {
+    let pubkey_point = k256::ProjectivePoint::GENERATOR * x;
+    let pubkey_affine = pubkey_point.to_affine();
+
+    use k256::elliptic_curve::sec1::ToEncodedPoint;
+    let pubkey_encoded = pubkey_affine.to_encoded_point(true);
+    let pubkey_hex = hex::encode(pubkey_encoded.as_bytes());
+
+    if let Some(expected) = pubkey {
+        return pubkey_hex == *expected;
+    }
+
+    // Fallback: check if R = kG
+    let s_inv = mod_inverse(s).unwrap();
+    let k = s_inv * (*z + *r * x);
+    let r_point = k256::ProjectivePoint::GENERATOR * k;
+    let r_x = r_point.to_affine().to_encoded_point(false);
+    if let Some(x_bytes) = r_x.x() {
+        let r_val = BigUint::from_bytes_be(x_bytes);
+        let n_bi = BigUint::from_str_radix("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16).unwrap();
+        let r_reduced = r_val % n_bi;
+        return scalar_to_decimal_string(r) == r_reduced.to_string();
+    }
+
+    false
+}
