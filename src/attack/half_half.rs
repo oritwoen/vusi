@@ -1,7 +1,7 @@
 use super::*;
 use crate::math::{mod_inverse, verify_private_key};
 use num_bigint::{BigInt, BigUint, ToBigInt};
-use num_traits::{Zero, Signed, Euclid};
+use num_traits::{Zero, Signed, Euclid, ToPrimitive};
 use k256::elliptic_curve::PrimeField;
 
 pub struct HalfHalfAttack;

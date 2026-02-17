@@ -183,12 +183,61 @@ mod tests {
     }
 
     #[test]
+    fn test_group_by_r_and_pubkey_different_pubkey() {
+        let input1 = SignatureInput {
+            r: "123".to_string(),
+            s: "456".to_string(),
+            z: "789".to_string(),
+            pubkey: Some("02abcdef".to_string()),
+            timing: None,
+        };
+        let input2 = SignatureInput {
+            r: "123".to_string(),
+            s: "111".to_string(),
+            z: "222".to_string(),
+            pubkey: Some("03fedcba".to_string()),
+            timing: None,
+        };
+
+        let sig1 = Signature::try_from(input1).unwrap();
+        let sig2 = Signature::try_from(input2).unwrap();
+
+        let groups = group_by_r_and_pubkey(&[sig1, sig2]);
+        assert_eq!(groups.len(), 2);
+    }
+
+    #[test]
     fn test_pubkey_normalization_case_insensitive() {
         let input1 = SignatureInput {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
             pubkey: Some("02ABCDEF".to_string()),
+            timing: None,
+        };
+        let input2 = SignatureInput {
+            r: "123".to_string(),
+            s: "111".to_string(),
+            z: "222".to_string(),
+            pubkey: Some("02abcdef".to_string()),
+            timing: None,
+        };
+
+        let sig1 = Signature::try_from(input1).unwrap();
+        let sig2 = Signature::try_from(input2).unwrap();
+
+        let groups = group_by_r_and_pubkey(&[sig1, sig2]);
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0].signatures.len(), 2);
+    }
+
+    #[test]
+    fn test_pubkey_normalization_0x_prefix() {
+        let input1 = SignatureInput {
+            r: "123".to_string(),
+            s: "456".to_string(),
+            z: "789".to_string(),
+            pubkey: Some("0x02abcdef".to_string()),
             timing: None,
         };
         let input2 = SignatureInput {
