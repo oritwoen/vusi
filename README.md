@@ -7,6 +7,10 @@
 
 ECDSA signature vulnerability analysis library and CLI tool.
 
+## Community
+
+- [Bitcointalk](https://bitcointalk.org/index.php?topic=5575149) - Discussion thread
+
 ## Features
 
 - **Nonce Reuse Detection**: Identifies signatures using the same nonce (k value)
