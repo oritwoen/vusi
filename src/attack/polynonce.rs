@@ -451,6 +451,7 @@ mod tests {
                     z: format!("{}", 300 + i),
                     pubkey: Some(pubkey.to_string()),
                     timestamp: Some(i as u64),
+                    kp: None,
                 })
                 .unwrap()
             })
@@ -479,6 +480,7 @@ mod tests {
                     z: format!("{}", 300 + i),
                     pubkey: Some("02abcdef".to_string()),
                     timestamp: Some(i as u64),
+                    kp: None,
                 })
                 .unwrap()
             })
@@ -500,6 +502,7 @@ mod tests {
                     z: format!("{}", 300 + i),
                     pubkey: None,
                     timestamp: Some(i as u64),
+                    kp: None,
                 })
                 .unwrap()
             })
