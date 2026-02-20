@@ -2,6 +2,8 @@
 
 use crate::signature::{Signature, SignatureInput};
 use anyhow::{bail, Result};
+use num_bigint::BigUint;
+use num_traits::Num;
 use std::io::{self, Read};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -29,7 +31,40 @@ pub fn parse_signatures(content: &str) -> Result<Vec<Signature>> {
         Format::Csv => parse_csv(content)?,
     };
 
-    inputs.into_iter().map(Signature::try_from).collect()
+    inputs
+        .into_iter()
+        .map(|input| {
+            let normalized = normalize_input(input)?;
+            Signature::try_from(normalized)
+        })
+        .collect()
+}
+
+fn normalize_value(s: &str) -> Result<String> {
+    let trimmed = s.trim();
+    if let Some(hex_str) = trimmed
+        .strip_prefix("0x")
+        .or_else(|| trimmed.strip_prefix("0X"))
+    {
+        if hex_str.is_empty() {
+            bail!("Empty hex value after 0x prefix");
+        }
+        if !hex_str.chars().all(|c| c.is_ascii_hexdigit()) {
+            bail!("Invalid hex string: only hex digits allowed after 0x prefix");
+        }
+        let biguint = BigUint::from_str_radix(hex_str, 16)
+            .map_err(|e| anyhow::anyhow!("Failed to parse hex value: {}", e))?;
+        Ok(biguint.to_string())
+    } else {
+        Ok(trimmed.to_string())
+    }
+}
+
+fn normalize_input(mut input: SignatureInput) -> Result<SignatureInput> {
+    input.r = normalize_value(&input.r)?;
+    input.s = normalize_value(&input.s)?;
+    input.z = normalize_value(&input.z)?;
+    Ok(input)
 }
 
 const BOM: &str = "\u{FEFF}";
@@ -104,5 +139,77 @@ mod tests {
     fn test_invalid_json_error() {
         let result = parse_signatures("not json");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_normalize_value_decimal_passthrough() {
+        let result = normalize_value("12345").unwrap();
+        assert_eq!(result, "12345");
+    }
+
+    #[test]
+    fn test_normalize_value_hex_to_decimal() {
+        let result = normalize_value("0xff").unwrap();
+        assert_eq!(result, "255");
+    }
+
+    #[test]
+    fn test_normalize_value_hex_uppercase_prefix() {
+        let result = normalize_value("0XFF").unwrap();
+        assert_eq!(result, "255");
+    }
+
+    #[test]
+    fn test_normalize_value_hex_large() {
+        let result =
+            normalize_value("0x0f13c7c741321a95510ba98792bc9050efdce2e422be4610f162449adce92a47")
+                .unwrap();
+        assert_eq!(
+            result,
+            "6819641642398093696120236467967538361543858578256722584730163952555838220871"
+        );
+    }
+
+    #[test]
+    fn test_normalize_value_trims_whitespace() {
+        let result = normalize_value("  0xff  ").unwrap();
+        assert_eq!(result, "255");
+    }
+
+    #[test]
+    fn test_normalize_value_empty_hex_fails() {
+        let result = normalize_value("0x");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_normalize_value_invalid_hex_chars_fails() {
+        let result = normalize_value("0xGGGG");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_hex_json_signatures() {
+        let json = r#"[{
+            "r": "0x0f13c7c741321a95510ba98792bc9050efdce2e422be4610f162449adce92a47",
+            "s": "0x0b4cc3447a2793c4598e5829827f38c67f72e4c3d4688019cd94066b9e7df6b9",
+            "z": "0x0ab06bc2befd52cde3b2de709a642e437b8a7187cc28de72bd5aff4a896e047b"
+        }]"#;
+        let sigs = parse_signatures(json).unwrap();
+        assert_eq!(sigs.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_hex_csv_signatures() {
+        let csv = "r,s,z,pubkey\n0xff,0xfe,0xfd,";
+        let sigs = parse_signatures(csv).unwrap();
+        assert_eq!(sigs.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_mixed_hex_decimal_signatures() {
+        let json = r#"[{"r": "0xff", "s": "456", "z": "0xab"}]"#;
+        let sigs = parse_signatures(json).unwrap();
+        assert_eq!(sigs.len(), 1);
     }
 }
