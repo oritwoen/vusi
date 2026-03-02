@@ -33,5 +33,6 @@ pub struct Vulnerability {
 pub struct RecoveredKey {
     pub private_key: Scalar,
     pub private_key_decimal: String,
+    pub private_key_hex: String,
     pub pubkey: Option<String>,
 }

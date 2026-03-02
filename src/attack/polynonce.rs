@@ -3,7 +3,7 @@
 //! Detects polynomial relationships between ECDSA nonces and recovers private keys.
 
 use super::*;
-use crate::math::scalar_to_decimal_string;
+use crate::math::{scalar_to_decimal_string, scalar_to_hex_string};
 use crate::signature::group_by_pubkey_ordered;
 use k256::elliptic_curve::ff::PrimeField;
 use k256::Scalar;
@@ -211,6 +211,7 @@ impl Attack for PolynonceAttack {
                 return Some(RecoveredKey {
                     private_key: d,
                     private_key_decimal: scalar_to_decimal_string(&d),
+                    private_key_hex: scalar_to_hex_string(&d),
                     pubkey: vuln.group.pubkey.clone(),
                 });
             }
