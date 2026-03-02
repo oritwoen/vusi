@@ -1,7 +1,9 @@
 //! Nonce reuse attack implementation
 
 use super::*;
-use crate::math::{recover_nonce, recover_private_key, scalar_to_decimal_string, scalar_to_hex_string};
+use crate::math::{
+    recover_nonce, recover_private_key, scalar_to_decimal_string, scalar_to_hex_string,
+};
 use crate::signature::group_by_r_and_pubkey;
 
 pub struct NonceReuseAttack;

@@ -197,7 +197,6 @@ struct SummaryOutput {
     keys_recovered: usize,
 }
 
-
 fn format_output(
     vulns: &[Vulnerability],
     attack: &dyn Attack,
