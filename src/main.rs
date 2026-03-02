@@ -2,7 +2,6 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use k256::Scalar;
 use serde::Serialize;
 use std::process::ExitCode;
 #[cfg(feature = "biased-nonce")]
@@ -198,11 +197,6 @@ struct SummaryOutput {
     keys_recovered: usize,
 }
 
-fn scalar_to_hex_string(scalar: &Scalar) -> String {
-    let bytes = scalar.to_bytes();
-    hex::encode(bytes)
-}
-
 fn format_output(
     vulns: &[Vulnerability],
     attack: &dyn Attack,
@@ -222,7 +216,7 @@ fn format_output(
                 None,
                 Some(RecoveredKeyOutput {
                     private_key_decimal: key.private_key_decimal.clone(),
-                    private_key_hex: scalar_to_hex_string(&key.private_key),
+                    private_key_hex: key.private_key_hex.clone(),
                 }),
             )
         } else {

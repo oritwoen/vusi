@@ -11,7 +11,7 @@
 //! Reference: bitlogik/lattice-attack, Howgrave-Graham & Smart (2001)
 
 use super::*;
-use crate::math::scalar_to_decimal_string;
+use crate::math::{scalar_to_decimal_string, scalar_to_hex_string};
 use crate::signature::group_by_pubkey_ordered;
 use k256::elliptic_curve::ff::PrimeField;
 use k256::elliptic_curve::sec1::ToEncodedPoint;
@@ -160,6 +160,7 @@ impl BiasedNonceAttack {
                     return Some(RecoveredKey {
                         private_key: d_scalar,
                         private_key_decimal: scalar_to_decimal_string(&d_scalar),
+                        private_key_hex: scalar_to_hex_string(&d_scalar),
                         pubkey: group.pubkey.clone(),
                     });
                 }

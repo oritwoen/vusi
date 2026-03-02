@@ -65,6 +65,11 @@ pub fn scalar_to_decimal_string(scalar: &Scalar) -> String {
     biguint.to_string()
 }
 
+pub fn scalar_to_hex_string(scalar: &Scalar) -> String {
+    let bytes = scalar.to_bytes();
+    hex::encode(bytes)
+}
+
 pub fn mod_inverse(a: &Scalar) -> Option<Scalar> {
     a.invert().into()
 }
