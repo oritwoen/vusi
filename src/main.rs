@@ -4,6 +4,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 use std::process::ExitCode;
+use std::fmt::Write;
 #[cfg(feature = "biased-nonce")]
 use vusi::attack::biased_nonce::{BiasType, ReductionAlgorithm};
 #[cfg(feature = "biased-nonce")]
@@ -252,37 +253,34 @@ fn format_output(
         Ok(serde_json::to_string_pretty(&report)?)
     } else {
         let mut output = String::new();
-        output.push_str(&format!("Analyzed {} signatures\n\n", sigs.len()));
+        writeln!(output, "Analyzed {} signatures\n", sigs.len())?;
 
         if vulns.is_empty() {
-            output.push_str("No vulnerabilities found.\n");
+            writeln!(output, "No vulnerabilities found.")?;
         } else {
-            output.push_str(&format!("Found {} vulnerabilities:\n\n", vulns.len()));
+            writeln!(output, "Found {} vulnerabilities:\n", vulns.len())?;
 
             for (i, vuln_output) in report.vulnerabilities.iter().enumerate() {
-                output.push_str(&format!("Vulnerability #{}\n", i + 1));
-                output.push_str(&format!("  Type: {}\n", vuln_output.vuln_type));
-                output.push_str(&format!("  Confidence: {:.1}\n", vuln_output.confidence));
-                output.push_str(&format!("  Signatures: {}\n", vuln_output.signatures_count));
+                writeln!(output, "Vulnerability #{}", i + 1)?;
+                writeln!(output, "  Type: {}", vuln_output.vuln_type)?;
+                writeln!(output, "  Confidence: {:.1}", vuln_output.confidence)?;
+                writeln!(output, "  Signatures: {}", vuln_output.signatures_count)?;
                 if let Some(pk) = &vuln_output.pubkey {
-                    output.push_str(&format!("  Public Key: {}\n", pk));
+                    writeln!(output, "  Public Key: {}", pk)?;
                 }
-                output.push_str(&format!("  R Value: {}\n", vuln_output.r_value));
+                writeln!(output, "  R Value: {}", vuln_output.r_value)?;
 
                 if let Some(key) = &vuln_output.recovered_key {
-                    output.push_str(&format!("  Status: {}\n", vuln_output.recovery_status));
-                    output.push_str(&format!(
-                        "  Private Key (decimal): {}\n",
-                        key.private_key_decimal
-                    ));
-                    output.push_str(&format!("  Private Key (hex): {}\n", key.private_key_hex));
+                    writeln!(output, "  Status: {}", vuln_output.recovery_status)?;
+                    writeln!(output, "  Private Key (decimal): {}", key.private_key_decimal)?;
+                    writeln!(output, "  Private Key (hex): {}", key.private_key_hex)?;
                 } else {
-                    output.push_str(&format!("  Status: {}\n", vuln_output.recovery_status));
+                    writeln!(output, "  Status: {}", vuln_output.recovery_status)?;
                     if let Some(reason) = &vuln_output.recovery_reason {
-                        output.push_str(&format!("  Reason: {}\n", reason));
+                        writeln!(output, "  Reason: {}", reason)?;
                     }
                 }
-                output.push('\n');
+                writeln!(output)?;
             }
         }
 
