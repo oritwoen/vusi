@@ -3,8 +3,8 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde::Serialize;
-use std::process::ExitCode;
 use std::fmt::Write;
+use std::process::ExitCode;
 #[cfg(feature = "biased-nonce")]
 use vusi::attack::biased_nonce::{BiasType, ReductionAlgorithm};
 #[cfg(feature = "biased-nonce")]
@@ -272,7 +272,11 @@ fn format_output(
 
                 if let Some(key) = &vuln_output.recovered_key {
                     writeln!(output, "  Status: {}", vuln_output.recovery_status)?;
-                    writeln!(output, "  Private Key (decimal): {}", key.private_key_decimal)?;
+                    writeln!(
+                        output,
+                        "  Private Key (decimal): {}",
+                        key.private_key_decimal
+                    )?;
                     writeln!(output, "  Private Key (hex): {}", key.private_key_hex)?;
                 } else {
                     writeln!(output, "  Status: {}", vuln_output.recovery_status)?;
