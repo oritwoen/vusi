@@ -137,6 +137,18 @@ mod tests {
     }
 
     #[test]
+    fn test_auto_detect_json_with_bom() {
+        let json = "\u{FEFF}[{\"r\":\"1\",\"s\":\"2\",\"z\":\"3\"}]";
+        assert_eq!(detect_format(json).unwrap(), Format::Json);
+    }
+
+    #[test]
+    fn test_auto_detect_csv_with_bom() {
+        let csv = "\u{FEFF}r,s,z\n1,2,3";
+        assert_eq!(detect_format(csv).unwrap(), Format::Csv);
+    }
+
+    #[test]
     fn test_invalid_json_error() {
         let result = parse_signatures("not json");
         assert!(result.is_err());
