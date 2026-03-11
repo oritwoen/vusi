@@ -25,6 +25,7 @@ pub fn load_signatures(input: &str) -> Result<Vec<Signature>> {
 }
 
 pub fn parse_signatures(content: &str) -> Result<Vec<Signature>> {
+    let content = content.strip_prefix(BOM).unwrap_or(content);
     let format = detect_format(content)?;
     let inputs = match format {
         Format::Json => parse_json(content)?,
@@ -136,6 +137,18 @@ mod tests {
     }
 
     #[test]
+    fn test_auto_detect_json_with_bom() {
+        let json = "\u{FEFF}[{\"r\":\"1\",\"s\":\"2\",\"z\":\"3\"}]";
+        assert_eq!(detect_format(json).unwrap(), Format::Json);
+    }
+
+    #[test]
+    fn test_auto_detect_csv_with_bom() {
+        let csv = "\u{FEFF}r,s,z\n1,2,3";
+        assert_eq!(detect_format(csv).unwrap(), Format::Csv);
+    }
+
+    #[test]
     fn test_invalid_json_error() {
         let result = parse_signatures("not json");
         assert!(result.is_err());
@@ -210,6 +223,20 @@ mod tests {
     fn test_parse_mixed_hex_decimal_signatures() {
         let json = r#"[{"r": "0xff", "s": "456", "z": "0xab"}]"#;
         let sigs = parse_signatures(json).unwrap();
+        assert_eq!(sigs.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_json_with_bom() {
+        let json = "\u{FEFF}[{\"r\":\"123\",\"s\":\"456\",\"z\":\"789\"}]";
+        let sigs = parse_signatures(json).unwrap();
+        assert_eq!(sigs.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_csv_with_bom() {
+        let csv = "\u{FEFF}r,s,z,pubkey\n123,456,789,\n";
+        let sigs = parse_signatures(csv).unwrap();
         assert_eq!(sigs.len(), 1);
     }
 }
