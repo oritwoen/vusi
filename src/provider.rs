@@ -25,6 +25,7 @@ pub fn load_signatures(input: &str) -> Result<Vec<Signature>> {
 }
 
 pub fn parse_signatures(content: &str) -> Result<Vec<Signature>> {
+    let content = content.strip_prefix(BOM).unwrap_or(content);
     let format = detect_format(content)?;
     let inputs = match format {
         Format::Json => parse_json(content)?,
@@ -210,6 +211,20 @@ mod tests {
     fn test_parse_mixed_hex_decimal_signatures() {
         let json = r#"[{"r": "0xff", "s": "456", "z": "0xab"}]"#;
         let sigs = parse_signatures(json).unwrap();
+        assert_eq!(sigs.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_json_with_bom() {
+        let json = "\u{FEFF}[{\"r\":\"123\",\"s\":\"456\",\"z\":\"789\"}]";
+        let sigs = parse_signatures(json).unwrap();
+        assert_eq!(sigs.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_csv_with_bom() {
+        let csv = "\u{FEFF}r,s,z,pubkey\n123,456,789,\n";
+        let sigs = parse_signatures(csv).unwrap();
         assert_eq!(sigs.len(), 1);
     }
 }
