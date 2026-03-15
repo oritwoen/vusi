@@ -300,7 +300,9 @@ mod tests {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
-            pubkey: Some("02AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_string()),
+            pubkey: Some(
+                "02AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_string(),
+            ),
             timestamp: None,
             kp: None,
         };
@@ -327,7 +329,8 @@ mod tests {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
-            pubkey: Some("0x02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").map(str::to_string),
+            pubkey: Some("0x02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                .map(str::to_string),
             timestamp: None,
             kp: None,
         };
@@ -507,7 +510,9 @@ mod tests {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
-            pubkey: Some("05aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()),
+            pubkey: Some(
+                "05aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+            ),
             timestamp: None,
             kp: None,
         };
