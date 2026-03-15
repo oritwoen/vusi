@@ -124,6 +124,12 @@ fn run(cli: Cli) -> Result<bool> {
                 }
                 #[cfg(feature = "polynonce")]
                 "polynonce" => {
+                    if _polynonce_degree != 1 {
+                        anyhow::bail!(
+                            "Only degree=1 (linear) is supported for polynonce attack, got {}",
+                            _polynonce_degree
+                        );
+                    }
                     let attack = PolynonceAttack::new(_polynonce_degree);
                     let vulns = attack.detect(&signatures);
                     (vulns, Box::new(attack))
