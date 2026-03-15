@@ -93,6 +93,32 @@ fn validate_pubkey_hex(pubkey: &str) -> Result<()> {
     if !pubkey.chars().all(|c| c.is_ascii_hexdigit()) {
         anyhow::bail!("Invalid pubkey: must be hexadecimal");
     }
+
+    match pubkey.len() {
+        66 => {
+            if !pubkey.starts_with("02") && !pubkey.starts_with("03") {
+                anyhow::bail!(
+                    "Invalid compressed pubkey: must start with 02 or 03, got {}",
+                    &pubkey[..2]
+                );
+            }
+        }
+        130 => {
+            if !pubkey.starts_with("04") {
+                anyhow::bail!(
+                    "Invalid uncompressed pubkey: must start with 04, got {}",
+                    &pubkey[..2]
+                );
+            }
+        }
+        len => {
+            anyhow::bail!(
+                "Invalid pubkey length: expected 66 (compressed) or 130 (uncompressed) hex chars, got {}",
+                len
+            );
+        }
+    }
+
     Ok(())
 }
 
@@ -165,6 +191,10 @@ pub fn group_by_r_and_pubkey(sigs: &[Signature]) -> Vec<SignatureGroup> {
 mod tests {
     use super::*;
 
+    // Valid-length test pubkeys (02/03 prefix + 64 hex chars = 66 total)
+    const TEST_PK_A: &str = "02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const TEST_PK_B: &str = "03bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
     #[test]
     fn test_signature_input_parse_decimal() {
         let input = SignatureInput {
@@ -188,7 +218,7 @@ mod tests {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
-            pubkey: Some("02abcdef".to_string()),
+            pubkey: Some(TEST_PK_A.to_string()),
             timestamp: None,
             kp: None,
         };
@@ -196,7 +226,7 @@ mod tests {
             r: "123".to_string(),
             s: "111".to_string(),
             z: "222".to_string(),
-            pubkey: Some("02abcdef".to_string()),
+            pubkey: Some(TEST_PK_A.to_string()),
             timestamp: None,
             kp: None,
         };
@@ -244,7 +274,7 @@ mod tests {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
-            pubkey: Some("02abcdef".to_string()),
+            pubkey: Some(TEST_PK_A.to_string()),
             timestamp: None,
             kp: None,
         };
@@ -252,7 +282,7 @@ mod tests {
             r: "123".to_string(),
             s: "111".to_string(),
             z: "222".to_string(),
-            pubkey: Some("03fedcba".to_string()),
+            pubkey: Some(TEST_PK_B.to_string()),
             timestamp: None,
             kp: None,
         };
@@ -270,7 +300,9 @@ mod tests {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
-            pubkey: Some("02ABCDEF".to_string()),
+            pubkey: Some(
+                "02AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_string(),
+            ),
             timestamp: None,
             kp: None,
         };
@@ -278,7 +310,7 @@ mod tests {
             r: "123".to_string(),
             s: "111".to_string(),
             z: "222".to_string(),
-            pubkey: Some("02abcdef".to_string()),
+            pubkey: Some(TEST_PK_A.to_string()),
             timestamp: None,
             kp: None,
         };
@@ -297,7 +329,8 @@ mod tests {
             r: "123".to_string(),
             s: "456".to_string(),
             z: "789".to_string(),
-            pubkey: Some("0x02abcdef").map(str::to_string),
+            pubkey: Some("0x02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                .map(str::to_string),
             timestamp: None,
             kp: None,
         };
@@ -305,7 +338,7 @@ mod tests {
             r: "123".to_string(),
             s: "111".to_string(),
             z: "222".to_string(),
-            pubkey: Some("02abcdef").map(str::to_string),
+            pubkey: Some(TEST_PK_A).map(str::to_string),
             timestamp: None,
             kp: None,
         };
@@ -396,17 +429,16 @@ mod tests {
     #[test]
     fn test_group_by_pubkey_ordered() {
         let sigs = vec![
-            make_sig(Some("02abcdef"), Some(3)),
-            make_sig(Some("02abcdef"), Some(1)),
-            make_sig(Some("02abcdef"), Some(2)),
-            make_sig(Some("03fedcba"), Some(1)),
+            make_sig(Some(TEST_PK_A), Some(3)),
+            make_sig(Some(TEST_PK_A), Some(1)),
+            make_sig(Some(TEST_PK_A), Some(2)),
+            make_sig(Some(TEST_PK_B), Some(1)),
         ];
         let groups = group_by_pubkey_ordered(&sigs);
         assert_eq!(groups.len(), 2);
-        // 02abcdef group should be sorted by timestamp: 1, 2, 3
         let pk1_group = groups
             .iter()
-            .find(|g| g.pubkey == Some("02abcdef".to_string()))
+            .find(|g| g.pubkey == Some(TEST_PK_A.to_string()))
             .unwrap();
         assert_eq!(pk1_group.signatures[0].timestamp, Some(1));
         assert_eq!(pk1_group.signatures[1].timestamp, Some(2));
@@ -425,7 +457,7 @@ mod tests {
         let sigs = vec![
             make_sig(None, Some(2)),
             make_sig(None, Some(1)),
-            make_sig(Some("02abcdef"), Some(1)),
+            make_sig(Some(TEST_PK_A), Some(1)),
         ];
         let groups = group_by_pubkey_ordered(&sigs);
         assert_eq!(groups.len(), 2);
@@ -443,9 +475,9 @@ mod tests {
     #[test]
     fn test_group_by_pubkey_ordered_none_timestamps_sort_first() {
         let sigs = vec![
-            make_sig(Some("02abcdef"), Some(3)),
-            make_sig(Some("02abcdef"), None),
-            make_sig(Some("02abcdef"), Some(1)),
+            make_sig(Some(TEST_PK_A), Some(3)),
+            make_sig(Some(TEST_PK_A), None),
+            make_sig(Some(TEST_PK_A), Some(1)),
         ];
         let groups = group_by_pubkey_ordered(&sigs);
         assert_eq!(groups.len(), 1);
@@ -455,5 +487,49 @@ mod tests {
         assert_eq!(group.signatures[0].timestamp, None);
         assert_eq!(group.signatures[1].timestamp, Some(1));
         assert_eq!(group.signatures[2].timestamp, Some(3));
+    }
+
+    #[test]
+    fn test_validate_pubkey_rejects_short_hex() {
+        let input = SignatureInput {
+            r: "123".to_string(),
+            s: "456".to_string(),
+            z: "789".to_string(),
+            pubkey: Some("02abcdef".to_string()),
+            timestamp: None,
+            kp: None,
+        };
+        let err = Signature::try_from(input).unwrap_err();
+        assert!(err.to_string().contains("Invalid pubkey length"));
+    }
+
+    #[test]
+    fn test_validate_pubkey_rejects_wrong_prefix() {
+        // 66 hex chars but wrong prefix (05 instead of 02/03)
+        let input = SignatureInput {
+            r: "123".to_string(),
+            s: "456".to_string(),
+            z: "789".to_string(),
+            pubkey: Some(
+                "05aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+            ),
+            timestamp: None,
+            kp: None,
+        };
+        let err = Signature::try_from(input).unwrap_err();
+        assert!(err.to_string().contains("Invalid compressed pubkey"));
+    }
+
+    #[test]
+    fn test_validate_pubkey_accepts_uncompressed() {
+        let input = SignatureInput {
+            r: "123".to_string(),
+            s: "456".to_string(),
+            z: "789".to_string(),
+            pubkey: Some(format!("04{}", "aa".repeat(64))),
+            timestamp: None,
+            kp: None,
+        };
+        assert!(Signature::try_from(input).is_ok());
     }
 }
