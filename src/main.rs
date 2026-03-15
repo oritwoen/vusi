@@ -221,9 +221,17 @@ fn format_output(
                 }),
             )
         } else {
+            let reason = match vuln.attack_type.as_str() {
+                "nonce-reuse" => "all signature pairs have identical s values",
+                "polynonce" => "elimination polynomial roots did not produce a valid key",
+                _ if vuln.attack_type.starts_with("biased-nonce") => {
+                    "lattice reduction did not yield the private key"
+                }
+                _ => "recovery did not produce a valid key",
+            };
             (
                 "unrecoverable".to_string(),
-                Some("all pairs have s1 == s2".to_string()),
+                Some(reason.to_string()),
                 None,
             )
         };
