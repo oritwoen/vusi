@@ -15,6 +15,10 @@ pub struct PolynonceAttack {
 
 impl PolynonceAttack {
     pub fn new(degree: usize) -> Self {
+        assert!(
+            degree == 1,
+            "only linear polynonce (degree=1) is implemented, got degree={degree}"
+        );
         Self { degree }
     }
 
@@ -383,6 +387,12 @@ mod tests {
                 }
             })
             .collect()
+    }
+
+    #[test]
+    #[should_panic(expected = "only linear polynonce")]
+    fn test_degree_above_1_panics() {
+        PolynonceAttack::new(2);
     }
 
     #[test]
