@@ -229,11 +229,7 @@ fn format_output(
                 }
                 _ => "recovery did not produce a valid key",
             };
-            (
-                "unrecoverable".to_string(),
-                Some(reason.to_string()),
-                None,
-            )
+            ("unrecoverable".to_string(), Some(reason.to_string()), None)
         };
 
         vuln_outputs.push(VulnerabilityOutput {
