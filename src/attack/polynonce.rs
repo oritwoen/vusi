@@ -443,6 +443,11 @@ mod tests {
         assert_eq!(degree, 2, "Elimination polynomial should be quadratic");
     }
 
+    // Valid-length test pubkeys for SignatureInput parsing
+    const TEST_PK_C: &str = "02cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
+    const TEST_PK_D: &str = "02dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    const TEST_PK_E: &str = "03eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+
     fn make_4_consecutive_sigs(pubkey: &str) -> Vec<Signature> {
         (1..=4)
             .map(|i| {
@@ -464,7 +469,7 @@ mod tests {
         let attack = PolynonceAttack::new(1);
         assert_eq!(attack.min_signatures(), 4);
 
-        let sigs = make_4_consecutive_sigs("02abcdef");
+        let sigs = make_4_consecutive_sigs(TEST_PK_C);
         let vulns = attack.detect(&sigs);
         assert_eq!(vulns.len(), 1);
     }
@@ -479,7 +484,7 @@ mod tests {
                     r: format!("{}", 100 + i),
                     s: format!("{}", 200 + i),
                     z: format!("{}", 300 + i),
-                    pubkey: Some("02abcdef".to_string()),
+                    pubkey: Some(TEST_PK_C.to_string()),
                     timestamp: Some(i as u64),
                     kp: None,
                 })
@@ -517,8 +522,8 @@ mod tests {
     fn test_polynonce_multiple_pubkeys_separate_groups() {
         let attack = PolynonceAttack::new(1);
 
-        let mut sigs = make_4_consecutive_sigs("02aaaaaa");
-        sigs.extend(make_4_consecutive_sigs("02bbbbbb"));
+        let mut sigs = make_4_consecutive_sigs(TEST_PK_D);
+        sigs.extend(make_4_consecutive_sigs(TEST_PK_E));
 
         let vulns = attack.detect(&sigs);
         assert_eq!(vulns.len(), 2);
@@ -549,7 +554,7 @@ mod tests {
         let attack = PolynonceAttack::new(1);
         let group = SignatureGroup {
             r: sigs[0].r,
-            pubkey: Some("02abcdef".to_string()),
+            pubkey: Some(TEST_PK_C.to_string()),
             signatures: sigs,
             confidence: 1.0,
         };
